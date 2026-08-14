@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سينما تايم | Cinema Time</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0f1115;
+            --header-bg: #16181e;
+            --card-bg: #1a1d24;
+            --accent-green: #2ecc71;
+            --accent-blue: #0088ff;
+            --accent-red: #e74c3c;
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+            --border-color: #232730;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Tajawal', sans-serif; direction: rtl; min-height: 100vh; }
+
+        header {
+            background-color: var(--header-bg); padding: 12px 15px; display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100; border-bottom: 2px solid var(--accent-blue); box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .logo-title { font-size: 1.3rem; font-weight: 900; color: #fff; }
+        .logo-sub { font-size: 0.75rem; color: var(--accent-blue); font-weight: 700; }
+        .header-icons { display: flex; align-items: center; gap: 12px; }
+
+        .icon-btn {
+            background: #21252f; border: 1px solid var(--border-color); color: #fff; width: 38px; height: 38px;
+            border-radius: 8px; font-size: 1.1rem; cursor: pointer; display: flex; justify-content: center; align-items: center;
+        }
+
+        .search-container { display: none; padding: 12px 15px; background: var(--header-bg); border-bottom: 1px solid var(--border-color); }
+        .search-box input { width: 100%; padding: 10px 15px; background: #0d0e11; border: 1px solid var(--accent-blue); border-radius: 6px; color: #fff; font-family: 'Tajawal', sans-serif; }
+
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 998; display: none; }
+        .sidebar { position: fixed; top: 0; right: -280px; width: 260px; height: 100%; background-color: var(--header-bg); z-index: 999; transition: right 0.3s ease; display: flex; flex-direction: column; }
+        .sidebar.active { right: 0; }
+        .sidebar-header { padding: 20px 15px; background: #111317; border-bottom: 2px solid var(--accent-blue); font-weight: 800; color: #fff; display: flex; justify-content: space-between; }
+        .sidebar-menu { list-style: none; overflow-y: auto; }
+        .sidebar-menu li a { display: block; padding: 14px 20px; color: var(--text-muted); text-decoration: none; font-weight: 600; border-bottom: 1px solid var(--border-color); }
+        .sidebar-menu li a.active { background-color: #1f232d; color: #fff; border-right: 4px solid var(--accent-blue); }
+
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 12px; }
+        .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; }
+        @media (min-width: 600px) { .movies-grid { grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 16px; } }
+
+        .movie-card { background: var(--card-bg); border-radius: 8px; overflow: hidden; position: relative; border: 1px solid var(--border-color); cursor: pointer; display: flex; flex-direction: column; }
+        .poster-wrapper { position: relative; width: 100%; aspect-ratio: 2 / 3; background: #111318; }
+        .poster-img { width: 100%; height: 100%; object-fit: cover; }
+        .ribbon-tag { position: absolute; top: 16px; right: -35px; transform: rotate(45deg); background-color: var(--accent-green); color: #000; font-weight: 800; font-size: 0.65rem; padding: 4px 35px; }
+        .badge-pinned { position: absolute; top: 8px; left: 8px; background-color: var(--accent-red); color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+        .movie-title { padding: 10px 8px; font-size: 0.85rem; font-weight: 700; text-align: center; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.92); z-index: 1000; justify-content: center; align-items: center; padding: 10px; }
+        .modal-box { width: 100%; max-width: 850px; background: var(--card-bg); border-radius: 8px; overflow: hidden; position: relative; border: 1px solid var(--accent-blue); }
+        .close-modal { position: absolute; top: 8px; left: 8px; background: var(--accent-red); color: #fff; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: bold; }
+        .iframe-container { position: relative; width: 100%; padding-bottom: 56.25%; height: 0; background: #000; }
+        .iframe-container iframe { position: absolute; top:0; left:0; width:100%; height:100%; border: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-icons">
+            <button class="icon-btn" onclick="toggleSidebar()">☰</button>
+            <button class="icon-btn" onclick="toggleSearch()">🔍</button>
+        </div>
+        <div class="logo">
+            <div class="logo-title">سينما تايم</div>
+            <div class="logo-sub">CINEMA TIME</div>
+        </div>
+        <div class="header-icons">
+            <button class="icon-btn">👤</button>
+        </div>
+    </header>
+
+    <div class="search-container" id="searchContainer">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="اكتب اسم الفيلم أو المسلسل..." oninput="applyFilters()">
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span>التصنيفات</span>
+            <button style="background:none; border:none; color:#fff; font-size:1.2rem;" onclick="toggleSidebar()">×</button>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="#" class="active" onclick="filterCategory('الكل', this)">الكل</a></li>
+            <li><a href="#" onclick="filterCategory('أكشن', this)">أكشن</a></li>
+            <li><a href="#" onclick="filterCategory('جريمة', this)">جريمة</a></li>
+            <li><a href="#" onclick="filterCategory('دراما', this)">دراما</a></li>
+            <li><a href="#" onclick="filterCategory('رعب', this)">رعب</a></li>
+            <li><a href="#" onclick="filterCategory('رومانسي', this)">رومانسي</a></li>
+            <li><a href="#" onclick="filterCategory('كوميدي', this)">كوميدي</a></li>
+            <li><a href="#" onclick="filterCategory('أفلام تركية', this)">أفلام تركية</a></li>
+            <li><a href="#" onclick="filterCategory('أفلام هندية', this)">أفلام هندية</a></li>
+            <li><a href="#" onclick="filterCategory('أفلام وثائقية', this)">أفلام وثائقية</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <div class="movies-grid" id="grid"></div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-box">
+            <button class="close-modal" onclick="closePlayer()">×</button>
+            <div class="iframe-container">
+                <iframe id="playerFrame" src="" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let moviesData = [];
+        let currentCategory = 'الكل';
+
+        // جلب البيانات المسحوبة تلقائياً من الملف المُحدث في الخلفية
+        async function loadBackgroundData() {
+            try {
+                const res = await fetch('data.json');
+                if (res.ok) {
+                    moviesData = await res.json();
+                    applyFilters();
+                }
+            } catch (e) {
+                console.log("في انتظار تحديث بيانات الخلفية...");
+            }
+        }
+
+        function renderGrid(items) {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            if (!items || items.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">جاري تحميل المحتوى التلقائي...</div>`;
+                return;
+            }
+            items.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+                card.onclick = () => openPlayer(m.streamUrl);
+                card.innerHTML = `
+                    <div class="poster-wrapper">
+                        ${m.tag ? `<div class="ribbon-tag">${m.tag}</div>` : ''}
+                        ${m.pinned ? '<div class="badge-pinned">مثبت</div>' : ''}
+                        <img class="poster-img" src="${m.poster}" alt="${m.title}" loading="lazy">
+                    </div>
+                    <div class="movie-title">${m.title}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function toggleSearch() {
+            const container = document.getElementById('searchContainer');
+            container.style.display = container.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function filterCategory(cat, el) {
+            currentCategory = cat;
+            document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+            if(el) el.classList.add('active');
+            toggleSidebar();
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            let filtered = moviesData;
+            if (currentCategory !== 'الكل') filtered = filtered.filter(m => m.category === currentCategory);
+            if (query !== '') filtered = filtered.filter(m => m.title.toLowerCase().includes(query));
+            renderGrid(filtered);
+        }
+
+        function openPlayer(url) {
+            if (!url) return;
+            document.getElementById('playerFrame').src = url;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closePlayer() {
+            document.getElementById('playerFrame').src = '';
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // قراءة التحديثات التلقائية عند الفتح
+        loadBackgroundData();
+    </script>
+</body>
+</html>
